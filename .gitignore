@@ -1,0 +1,14 @@
+# Godot
+.godot/
+*.translation
+
+# Build output and signing material — never published
+build/
+*.keystore
+export_presets.cfg
+
+# Import cache (Godot regenerates these on first open)
+*.import
+
+# OS noise
+.DS_Store
