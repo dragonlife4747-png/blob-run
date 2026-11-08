@@ -1238,21 +1238,15 @@ func _spawn_hazard(hz: float, rng: RandomNumberGenerator, force_lane := -1) -> v
 			cm.rings = 2
 			cone.mesh = cm
 			cone.position = Vector3(bx, 0.20 + h * 0.5, 0)
-			var col := Color("#FF2E00") if layer == 0 else Color("#FFB020")
+			var col := Color("#FF2A00") if layer == 0 else Color("#FF9E1B")
 			var fm := _mat(col, 0.35)
 			fm.emission_enabled = true
 			fm.emission = col
-			fm.emission_energy_multiplier = 4.2 if layer == 0 else 5.4
-			fm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			fm.albedo_color.a = 0.86
+			fm.emission_energy_multiplier = 3.4 if layer == 0 else 4.2
 			cone.material_override = fm
 			cone.set_meta("by", cone.position.y)
 			root.add_child(cone)
 			flames.append(cone)
-	var lbl := _label3d("FIRE", 90, 0.0062, Vector3(0, 2.4, 0))
-	lbl.modulate = Color("#FFB59A")
-	lbl.reparent(root, false)
-	lbl.position = Vector3(0, 2.4, 0)
 
 	# embers rising out of the flames
 	var embers := CPUParticles3D.new()
@@ -1671,11 +1665,20 @@ func _check_pickups() -> void:
 		var pz: float = p["z"]
 		var node: MeshInstance3D = p["node"]
 		var dist := z - pz
+		# rolled past it: clear it away so nothing lingers behind the player
+		if dist < -1.6:
+			p["alive"] = false
+			if trace:
+				print("PICKUP passed type=%s" % String(p.get("type", "crystal")))
+			var gone := create_tween()
+			gone.tween_property(node, "scale", Vector3.ONE * 0.02, 0.18)
+			gone.tween_callback(node.queue_free)
+			continue
 		if dist < -1.0 or dist > 40.0:
 			continue
-		if mag > 0.0 and dist < 16.0:
-			node.position.x = move_toward(node.position.x, blob_x, 4.0 * get_process_delta_time() * (1.0 + mag))
-		if absf(z - pz) < 1.2 and absf(blob_x - node.position.x) < radius + 0.75 + mag * 0.35:
+		# pickups never change lane; an active magnet simply grabs them from any lane
+		var in_reach := absf(blob_x - node.position.x) < radius + 0.75 or mag > 0.0
+		if absf(z - pz) < 1.2 and in_reach:
 			p["alive"] = false
 			var kind := String(p.get("type", "crystal"))
 			var col: Color = p.get("col", UIKit.C_ACCENT)
@@ -2033,38 +2036,6 @@ func _tutorial_finish() -> void:
 		tw.tween_callback(tut_layer.queue_free)
 
 
-func _revive_cost() -> int:
-	return 120 + revives * 80
-
-
-func _do_revive() -> void:
-	# only from the death screen: a second tap must never charge coins again
-	if state != "dead":
-		return
-	var cost := _revive_cost()
-	if Profile.coins < cost:
-		return
-	Profile.coins -= cost
-	Profile.save_profile()
-	revives += 1
-	if death_tw != null and death_tw.is_valid():
-		death_tw.kill()
-	death_tw = null
-	_clear_panel()
-	hud.visible = true
-	state = "play"
-	mass = maxf(mass, goal * 0.55)
-	radius = _radius_for(mass)
-	invuln = 3.0
-	prev_z = z
-	blob.visible = true
-	blob.scale = Vector3.ONE * radius
-	_play("buy")
-	_buzz(45)
-	_burst(Vector3(blob_x, radius, z), Color("#7BE8FF"), 20, 9.0, 1.0)
-	_update_hud()
-
-
 func _show_lose(reason: String) -> void:
 	_tutorial_clear()
 	hud.visible = false
@@ -2096,14 +2067,6 @@ func _show_lose(reason: String) -> void:
 		_start_run(level)
 	)
 	v.add_child(retry)
-	var can_revive := revives < 2 and Profile.coins >= _revive_cost()
-	if can_revive:
-		var cont := UIKit.button("REVIVE  ·  %d COINS" % _revive_cost(), "gold", 58, 19)
-		cont.pressed.connect(func() -> void:
-			_play("click")
-			_do_revive()
-		)
-		v.add_child(cont)
 	var home := UIKit.button("HOME", "ghost", 52, 17)
 	home.pressed.connect(func() -> void:
 		_play("click")
