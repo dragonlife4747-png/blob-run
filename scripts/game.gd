@@ -8,7 +8,7 @@ const MASS_MIN := 4.0
 const SPEED_BASE := 13.5
 const LEVEL_LEN := 170.0
 const ROAD_TOP := 0.57
-const GATE_STEP := 48.0
+const GATE_STEP := 60.0
 const GATE_COLORS := [
 	Color("#35E6FF"), Color("#9B6BFF"), Color("#4FD1C5"),
 	Color("#FFB020"), Color("#FF7AC6"), Color("#5B8CFF"),
@@ -19,26 +19,26 @@ const SPEED_FX := preload("res://shaders/speed_fx.gdshader")
 const BIOMES := [
 	{
 		"name": "ROOFTOPS", "decor": "city",
-		"sky_top": Color("#0B2F72"), "sky_horizon": Color("#8FD0FF"),
-		"ground": Color("#5FA86E"), "track": Color("#B9C8E8"), "fog": Color("#9CC7F0"),
+		"sky_top": Color("#082353"), "sky_horizon": Color("#6FB3E8"),
+		"ground": Color("#3E7E52"), "track": Color("#7C8FB8"), "fog": Color("#6FA4D6"),
 		"ambient": Color(0.72, 0.80, 0.98),
 	},
 	{
 		"name": "GROVE", "decor": "trees",
-		"sky_top": Color("#0A4A3C"), "sky_horizon": Color("#B6F2C8"),
-		"ground": Color("#2E7D4F"), "track": Color("#D6E4C6"), "fog": Color("#B7E3C4"),
+		"sky_top": Color("#063127"), "sky_horizon": Color("#84D6A2"),
+		"ground": Color("#1E5B39"), "track": Color("#A7BC8C"), "fog": Color("#7FBF95"),
 		"ambient": Color(0.80, 0.95, 0.85),
 	},
 	{
 		"name": "CANYON", "decor": "rocks",
-		"sky_top": Color("#41123A"), "sky_horizon": Color("#FFB27A"),
-		"ground": Color("#8A4326"), "track": Color("#F0CFB2"), "fog": Color("#F0B48C"),
+		"sky_top": Color("#2C0A28"), "sky_horizon": Color("#E08A4E"),
+		"ground": Color("#6B2F19"), "track": Color("#C79A72"), "fog": Color("#C98A5E"),
 		"ambient": Color(1.0, 0.86, 0.74),
 	},
 	{
 		"name": "ABYSS", "decor": "coral",
-		"sky_top": Color("#060820"), "sky_horizon": Color("#3A3C8E"),
-		"ground": Color("#153253"), "track": Color("#6FD3E8"), "fog": Color("#3E5E9E"),
+		"sky_top": Color("#040515"), "sky_horizon": Color("#2C2E74"),
+		"ground": Color("#0E2440"), "track": Color("#3E7E92"), "fog": Color("#2A4272"),
 		"ambient": Color(0.66, 0.78, 1.0),
 	},
 ]
@@ -99,6 +99,7 @@ var fx_strength := 0.0
 var fov_punch := 0.0
 var near_t := 0.0
 var revives := 0
+var death_tw: Tween
 var daily_mode := false
 var daily_seed := 0
 var combo := 0
@@ -178,9 +179,9 @@ func _build_env() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.72, 0.80, 0.98)
-	env.ambient_light_energy = 0.34
+	env.ambient_light_energy = 0.24
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.06
+	env.tonemap_exposure = 0.97
 	env.tonemap_white = 6.0
 	env.glow_enabled = true
 	env.glow_intensity = 0.45
@@ -192,8 +193,8 @@ func _build_env() -> void:
 	env.set_glow_level(3, 0.6)
 	env.set_glow_level(4, 0.45)
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.22
-	env.adjustment_contrast = 1.05
+	env.adjustment_saturation = 1.30
+	env.adjustment_contrast = 1.16
 	env.fog_enabled = true
 	env.fog_light_color = Color("#9CC7F0")
 	env.fog_density = 0.0032
@@ -671,7 +672,7 @@ func _debug_click_next() -> void:
 func _debug_click_revive() -> void:
 	await get_tree().create_timer(1.4).timeout
 	for b in _all_buttons(panel_layer):
-		if b is Button and String(b.text).begins_with("CONTINUE"):
+		if b is Button and (String(b.text).begins_with("REVIVE") or String(b.text).begins_with("CONTINUE")):
 			print("AUTOREVIVE press ", b.text, " coins_before=", Profile.coins)
 			b.pressed.emit()
 			return
@@ -1237,20 +1238,43 @@ func _spawn_hazard(hz: float, rng: RandomNumberGenerator, force_lane := -1) -> v
 			cm.rings = 2
 			cone.mesh = cm
 			cone.position = Vector3(bx, 0.20 + h * 0.5, 0)
-			var col := Color("#FF6A00") if layer == 0 else Color("#FFD766")
+			var col := Color("#FF2E00") if layer == 0 else Color("#FFB020")
 			var fm := _mat(col, 0.35)
 			fm.emission_enabled = true
 			fm.emission = col
-			fm.emission_energy_multiplier = 2.4 if layer == 0 else 3.0
+			fm.emission_energy_multiplier = 4.2 if layer == 0 else 5.4
 			fm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 			fm.albedo_color.a = 0.86
 			cone.material_override = fm
+			cone.set_meta("by", cone.position.y)
 			root.add_child(cone)
 			flames.append(cone)
 	var lbl := _label3d("FIRE", 90, 0.0062, Vector3(0, 2.4, 0))
-	lbl.modulate = Color("#FFC08A")
+	lbl.modulate = Color("#FFB59A")
 	lbl.reparent(root, false)
 	lbl.position = Vector3(0, 2.4, 0)
+
+	# embers rising out of the flames
+	var embers := CPUParticles3D.new()
+	embers.mesh = _particle_mesh()
+	embers.amount = 22
+	embers.lifetime = 0.85
+	embers.local_coords = false
+	embers.emitting = true
+	embers.direction = Vector3(0, 1, 0)
+	embers.spread = 26.0
+	embers.gravity = Vector3(0, 3.2, 0)
+	embers.initial_velocity_min = 0.6
+	embers.initial_velocity_max = 1.8
+	embers.scale_amount_min = 0.05
+	embers.scale_amount_max = 0.14
+	var eramp := Gradient.new()
+	eramp.set_color(0, Color(1.0, 0.72, 0.25, 1.0))
+	eramp.set_color(1, Color(1.0, 0.25, 0.05, 0.0))
+	embers.color_ramp = eramp
+	embers.color = Color(1.0, 0.62, 0.2, 1.0)
+	embers.position = Vector3(0, 0.5, 0)
+	root.add_child(embers)
 	hazards.append({"node": root, "z": hz, "x": ex, "lane": ln, "done": false, "swing": swing, "phase": rng.randf() * TAU, "flames": flames})
 
 
@@ -1405,7 +1429,9 @@ func _advance(delta: float) -> void:
 			if f == null or not is_instance_valid(f):
 				continue
 			var w := sin(clock * 9.0 + ph + float(i) * 1.7)
-			f.scale = Vector3(1.0 + w * 0.10, 1.0 + w * 0.22, 1.0 + w * 0.10)
+			f.scale = Vector3(1.0 + w * 0.12, 1.0 + w * 0.26, 1.0 + w * 0.12)
+			f.position.y = f.get_meta("by", f.position.y) + sin(clock * 7.0 + ph + float(i)) * 0.06
+			f.rotation.y += 0.9 * get_process_delta_time()
 		if not h["swing"]:
 			continue
 		var hn: Node3D = h["node"]
@@ -1691,6 +1717,8 @@ func _check_hazards() -> void:
 			h["done"] = true
 			var node: Node3D = h["node"]
 			var hx := node.position.x if node != null else float(h["x"])
+			if invuln > 0.0:
+				continue
 			if absf(blob_x - hx) < radius + 0.35:
 				var before := mass
 				mass *= 0.7
@@ -1800,9 +1828,9 @@ func _die(reason: String) -> void:
 	_play("lose")
 	_buzz(180)
 	shake = 1.4
-	var tw := create_tween()
-	tw.tween_property(blob, "scale", Vector3(radius * 1.4, radius * 0.2, radius * 1.4), 0.30)
-	tw.tween_callback(func() -> void: blob.visible = false)
+	death_tw = create_tween()
+	death_tw.tween_property(blob, "scale", Vector3(radius * 1.4, radius * 0.2, radius * 1.4), 0.30)
+	death_tw.tween_callback(func() -> void: blob.visible = false)
 	_show_lose(reason)
 
 
@@ -2010,19 +2038,27 @@ func _revive_cost() -> int:
 
 
 func _do_revive() -> void:
+	# only from the death screen: a second tap must never charge coins again
+	if state != "dead":
+		return
 	var cost := _revive_cost()
 	if Profile.coins < cost:
 		return
 	Profile.coins -= cost
 	Profile.save_profile()
 	revives += 1
+	if death_tw != null and death_tw.is_valid():
+		death_tw.kill()
+	death_tw = null
 	_clear_panel()
 	hud.visible = true
 	state = "play"
 	mass = maxf(mass, goal * 0.55)
 	radius = _radius_for(mass)
-	invuln = 2.4
+	invuln = 3.0
+	prev_z = z
 	blob.visible = true
+	blob.scale = Vector3.ONE * radius
 	_play("buy")
 	_buzz(45)
 	_burst(Vector3(blob_x, radius, z), Color("#7BE8FF"), 20, 9.0, 1.0)
@@ -2054,20 +2090,20 @@ func _show_lose(reason: String) -> void:
 	gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(gl)
 	v.add_child(UIKit.hsep(8))
-	var can_revive := revives < 2 and Profile.coins >= _revive_cost()
-	if can_revive:
-		var cont := UIKit.button("CONTINUE  ·  %d" % _revive_cost(), "primary", 62, 23)
-		cont.pressed.connect(func() -> void:
-			_play("click")
-			_do_revive()
-		)
-		v.add_child(cont)
-	var retry := UIKit.button("RETRY", "ghost" if can_revive else "primary", 62, 23)
+	var retry := UIKit.button("RETRY", "primary", 64, 24)
 	retry.pressed.connect(func() -> void:
 		_play("click")
 		_start_run(level)
 	)
 	v.add_child(retry)
+	var can_revive := revives < 2 and Profile.coins >= _revive_cost()
+	if can_revive:
+		var cont := UIKit.button("REVIVE  ·  %d COINS" % _revive_cost(), "gold", 58, 19)
+		cont.pressed.connect(func() -> void:
+			_play("click")
+			_do_revive()
+		)
+		v.add_child(cont)
 	var home := UIKit.button("HOME", "ghost", 52, 17)
 	home.pressed.connect(func() -> void:
 		_play("click")

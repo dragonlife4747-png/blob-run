@@ -15,13 +15,13 @@ into the pool, and your final mass is the score.
 
 - **Two lanes.** Tap the left or right half of the screen, swipe, or press ← / → to
   switch. The blob never moves freely.
-- **Rhythm.** Gate pairs sit exactly 48 units apart, so the run reads as an even beat.
+- **Rhythm.** Gate pairs sit exactly 60 units apart, so the run reads as an even beat.
 - **Math gates.** Each pair puts one good operation in one lane and one bad operation in
   the other (`×2`, `+30`, `÷2`, `×0.7`, `−40%`). The chosen gate applies instantly.
 - **Enemies.** Green spheres can be eaten, red ones kill. Colour resolves live against your
   radius, so a grown blob can suddenly eat what used to be lethal.
-- **Fire.** Rows of flame that burn 30% of your mass; the burned mass curls off the drop as
-  steam with its own hiss. From level 3 some fire rows slide across the track.
+- **Fire.** Rows of flame with rising embers that burn 30% of your mass; the burned mass curls
+  off the drop as steam with its own hiss. From level 3 some fire rows slide across the track.
 - **Pickups.** Turquoise shards give +15% mass, pink rings switch on an 8s magnet,
   blue bubbles add a shield, gold cubes make gates apply twice for 6s.
 - **Combo.** Good gates in a row build a streak: 3 / 5 / 8 in a row pay +6 / +10 / +15%
