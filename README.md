@@ -164,3 +164,23 @@ godot --headless --path . --export-release "Android AAB" build/blob-run.aab
 `android/` is git-ignored (200 MB of SDK libraries); the two-step install above
 recreates it. `build/blobrun-release.apk` (plain APK) uses the same preset minus
 the Gradle flags, so both artefacts come from one codebase.
+
+## Cafe Bazaar signature file (`.bin`)
+
+Bazaar builds the installable APKs from the AAB itself, so it needs a signed digest
+instead of your keystore. Generate it offline with their tool, from the *same* AAB
+you upload:
+
+```bash
+java -jar ~/.hermes/tools/bundlesigner/bundlesigner.jar genbin -v \
+  --bundle build/blob-run.aab --bin dist \
+  --v2-signing-enabled true --v3-signing-enabled true \
+  --ks build/blobrun-release.keystore --ks-key-alias blobrun \
+  --ks-pass pass:"$KS_PASS" --key-pass pass:"$KS_PASS" --pass-encoding utf-8
+# -> dist/blob-run.bin   (871 KB for 0.3.1)
+
+java -jar bundlesigner.jar verify --print-certs universal.apk   # sanity: signer DN + digest
+```
+
+The `.bin` is bound to one exact AAB: rebuild it whenever the bundle changes, or
+Bazaar rejects the pair. It is a signature digest, not an encrypted bundle.
