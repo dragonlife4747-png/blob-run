@@ -85,6 +85,28 @@ const FA := {
 }
 
 
+const FA_DIGITS := ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"]
+
+
+## Converts every ASCII digit in the string to its Persian counterpart when
+## the UI language is Persian. Numbers are the same value, just localised.
+static func d(source: String) -> String:
+	if not fa:
+		return source
+	var out := ""
+	for i in range(source.length()):
+		var c := source[i]
+		if c >= "0" and c <= "9":
+			out += FA_DIGITS[c.to_int()]
+		else:
+			out += c
+	return out
+
+
+static func num(value: int) -> String:
+	return d(str(value))
+
+
 static func t(s: String) -> String:
 	if not fa:
 		return s

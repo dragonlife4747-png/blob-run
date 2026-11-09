@@ -164,7 +164,7 @@ func _build_home() -> void:
 	_hero.rim = sd["rim"]
 	hero_wrap.add_child(_hero)
 
-	var logo := UIKit.shadowed("BLOB", 88, UIKit.C_TEXT, 700)
+	var logo := UIKit.shadowed("قطره" if Profile.is_fa() else "BLOB", 88, UIKit.C_TEXT, 700)
 	logo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(logo)
 	var tag := UIKit.label(L10n.t("G R O W   ·   R O L L   ·   R E P E A T"), 15, UIKit.C_MUTED, 700, false)

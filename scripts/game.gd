@@ -1358,7 +1358,7 @@ func _process(delta: float) -> void:
 	match state:
 		"play":
 			_update_gate_visuals()
-			lbl_combo.text = ("PERFECT ×%d" % combo) if combo >= 2 else ""
+			lbl_combo.text = L10n.d(("PERFECT ×%d" % combo) if combo >= 2 else "")
 			var buffs: Array = []
 			if magnet_t > 0.0:
 				buffs.append("MAGNET %ds" % int(ceil(magnet_t)))
@@ -1368,7 +1368,7 @@ func _process(delta: float) -> void:
 				buffs.append("SHIELD %d" % shield_left)
 			lbl_buffs.text = "   ".join(buffs)
 			coin_shown = lerpf(coin_shown, float(Profile.coins + coins_run), 6.0 * delta)
-			lbl_coins.text = UIKit.short_num(int(round(coin_shown)))
+			lbl_coins.text = L10n.d(UIKit.short_num(int(round(coin_shown))))
 			if hitstop > 0.0:
 				hitstop -= delta
 				_update_blob_visual(delta)
@@ -2207,10 +2207,10 @@ func _update_hud() -> void:
 	if daily_mode:
 		lbl_level.text = "ران روزانه" if Profile.is_fa() else "DAILY RUN"
 	else:
-		lbl_level.text = ("مرحله %d" if Profile.is_fa() else "LEVEL %d") % level
-	lbl_mass.text = str(int(mass))
-	lbl_coins.text = UIKit.short_num(Profile.coins + coins_run)
-	lbl_goal.text = ("هدف %d" if Profile.is_fa() else "GOAL %d") % int(goal)
+		lbl_level.text = L10n.d(("مرحله %d" if Profile.is_fa() else "LEVEL %d") % level)
+	lbl_mass.text = L10n.d(str(int(mass)))
+	lbl_coins.text = L10n.d(UIKit.short_num(Profile.coins + coins_run))
+	lbl_goal.text = L10n.d(("هدف %d" if Profile.is_fa() else "GOAL %d") % int(goal))
 	goal_bar.value = mass / maxf(goal, 1.0)
 	goal_bar.fill_b = UIKit.C_LIME if mass >= goal else UIKit.C_ACCENT
 	for c in shield_row.get_children():
@@ -2248,7 +2248,7 @@ func _box(size: Vector3, pos: Vector3, c: Color, parent: Node3D) -> MeshInstance
 
 func _label3d(text: String, size: int, px: float, pos: Vector3) -> Label3D:
 	var l := Label3D.new()
-	l.text = text
+	l.text = L10n.d(text)
 	l.font = UIKit.display(600)
 	l.font_size = size
 	l.pixel_size = px

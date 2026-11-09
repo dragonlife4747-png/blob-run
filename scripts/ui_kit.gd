@@ -1,5 +1,7 @@
 class_name UIKit
 extends RefCounted
+
+const L10n = preload("res://scripts/l10n.gd")
 ## Shared visual language: palette, fonts, panels, buttons.
 
 const C_BG_TOP := Color("#070B1E")
@@ -66,7 +68,7 @@ static func body(weight := 700) -> Font:
 # ------------------------------------------------------------------ labels
 static func label(text: String, size: int, color: Color = C_TEXT, weight := 700, display_font := true) -> Label:
 	var l := Label.new()
-	l.text = text
+	l.text = L10n.d(text)
 	l.add_theme_font_override("font", display(weight) if display_font else body(weight))
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
@@ -135,7 +137,7 @@ static func _btn_style(bg: Color, radius: int, border: Color, shadow_alpha: floa
 
 static func button(text: String, kind := "primary", height := 62, font_size := 24) -> Button:
 	var b := Button.new()
-	b.text = text
+	b.text = L10n.d(text)
 	b.custom_minimum_size = Vector2(0, height)
 	b.focus_mode = Control.FOCUS_NONE
 	b.add_theme_font_override("font", display(600))
@@ -233,6 +235,12 @@ static func hsep(height := 12) -> Control:
 
 
 static func short_num(v: int) -> String:
+	if L10n.fa:
+		if v < 10000:
+			return L10n.num(v)
+		if v < 1000000:
+			return "%s هزار" % L10n.num(int(round(float(v) / 1000.0)))
+		return "%s میلیون" % L10n.num(int(round(float(v) / 1000000.0)))
 	if v < 10000:
 		return str(v)
 	if v < 100000:
