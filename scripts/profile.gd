@@ -46,6 +46,7 @@ var best_mass := 0
 var unlocked := 1
 var tutorial_done := false
 var lang := "en"
+var lang_set := false
 var daily_best := 0
 var daily_date := ""
 var stars := {}
@@ -64,8 +65,15 @@ func _ready() -> void:
 
 
 # ---------------------------------------------------------------- persistence
+func apply_locale_default() -> void:
+	lang = "fa" if OS.get_locale_language().begins_with("fa") else "en"
+	lang_set = true
+	L10n.fa = (lang == "fa")
+
+
 func load_profile() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):
+		apply_locale_default()
 		_roll_mission()
 		save_profile()
 		return
@@ -83,7 +91,12 @@ func load_profile() -> void:
 	unlocked = maxi(1, int(d.get("unlocked", 1)))
 	tutorial_done = bool(d.get("tutorial_done", false))
 	lang = String(d.get("lang", "en"))
-	L10n.fa = (lang == "fa")
+	lang_set = bool(d.get("lang_set", false))
+	if not lang_set:
+		# first launch: follow the phone language
+		apply_locale_default()
+	else:
+		L10n.fa = (lang == "fa")
 	daily_best = int(d.get("daily_best", 0))
 	daily_date = String(d.get("daily_date", ""))
 	if daily_date != Time.get_date_string_from_system():
@@ -116,6 +129,7 @@ func save_profile() -> void:
 		"unlocked": unlocked,
 		"tutorial_done": tutorial_done,
 		"lang": lang,
+		"lang_set": lang_set,
 		"daily_best": daily_best,
 		"daily_date": daily_date,
 		"stars": stars,
@@ -248,6 +262,7 @@ func is_fa() -> bool:
 
 func set_lang(code: String) -> void:
 	lang = code
+	lang_set = true
 	L10n.fa = (lang == "fa")
 	save_profile()
 
