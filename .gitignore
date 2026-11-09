@@ -2,6 +2,9 @@
 .godot/
 *.translation
 
+# Gradle build template (200MB of SDK libs) — regenerated from android_source.zip
+android/
+
 # Build output and signing material — never published
 build/
 *.keystore

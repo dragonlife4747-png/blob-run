@@ -136,3 +136,31 @@ Pass them after `--` so they reach `OS.get_cmdline_user_args()`:
 | | |
 | --- | --- |
 | ![play](docs/preview/preview-play.jpg) | ![win](docs/preview/preview-win.jpg) |
+
+## Building an Android App Bundle (AAB)
+
+Cafe Bazaar and Google Play accept an `.aab`. Godot only produces one through a
+Gradle build, so the Android build template has to be present:
+
+```bash
+# 1. one-time: grab the source template for this exact engine version
+curl -L -o /tmp/android_source.zip \
+  https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_android_source.perfetto.zip
+
+# 2. it must live in the export-template folder...
+cp /tmp/android_source.zip \
+  "$HOME/Library/Application Support/Godot/export_templates/4.7.2.stable/android_source.zip"
+
+# 3. ...and be unpacked into the project as android/build/
+mkdir -p android/build && unzip -q /tmp/android_source.zip -d android/build
+printf '4.7.2.stable' > android/build/.build_version
+
+# 4. export (preset "Android AAB" has gradle_build + export_format=1)
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+godot --headless --path . --export-release "Android AAB" build/blob-run.aab
+```
+
+`android/` is git-ignored (200 MB of SDK libraries); the two-step install above
+recreates it. `build/blobrun-release.apk` (plain APK) uses the same preset minus
+the Gradle flags, so both artefacts come from one codebase.
