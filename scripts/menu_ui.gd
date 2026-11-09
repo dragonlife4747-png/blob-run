@@ -1,5 +1,7 @@
 class_name MenuUI
 extends Control
+
+const L10n = preload("res://scripts/l10n.gd")
 ## All menu screens: home, level select, upgrades, skins, settings.
 
 signal play_pressed
@@ -135,7 +137,7 @@ func _build_home() -> void:
 	var sp := Control.new()
 	sp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(sp)
-	var best := UIKit.chip("BEST %s" % UIKit.short_num(Profile.best_mass), UIKit.C_GOLD)
+	var best := UIKit.chip(("بهترین %s" if Profile.is_fa() else "BEST %s") % UIKit.short_num(Profile.best_mass), UIKit.C_GOLD)
 	best.custom_minimum_size = Vector2(176, 48)
 	top.add_child(best)
 	var gear := UIKit.icon_button("...", 44)
@@ -165,7 +167,7 @@ func _build_home() -> void:
 	var logo := UIKit.shadowed("BLOB", 88, UIKit.C_TEXT, 700)
 	logo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(logo)
-	var tag := UIKit.label("G R O W   ·   R O L L   ·   R E P E A T", 15, UIKit.C_MUTED, 700, false)
+	var tag := UIKit.label(L10n.t("G R O W   ·   R O L L   ·   R E P E A T"), 15, UIKit.C_MUTED, 700, false)
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(tag)
 
@@ -173,11 +175,11 @@ func _build_home() -> void:
 	pad.custom_minimum_size = Vector2(0, 18)
 	v.add_child(pad)
 
-	var play := _btn("PLAY", "primary", 90, 34)
+	var play := _btn(L10n.t("PLAY"), "primary", 90, 34)
 	play.pressed.connect(func() -> void: play_pressed.emit())
 	v.add_child(play)
 
-	var daily := _btn("TODAY'S RUN  ·  BEST %s" % UIKit.short_num(Profile.daily_best), "ghost", 58, 17)
+	var daily := _btn(("ران امروز  ·  رکورد %s" if Profile.is_fa() else "TODAY'S RUN  ·  BEST %s") % UIKit.short_num(Profile.daily_best), "ghost", 58, 17)
 	daily.pressed.connect(func() -> void:
 		_click()
 		daily_pressed.emit()
@@ -186,7 +188,7 @@ func _build_home() -> void:
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
-	for item in [["LEVELS", "levels"], ["SHOP", "shop"], ["SKINS", "skins"]]:
+	for item in [[L10n.t("LEVELS"), "levels"], [L10n.t("SHOP"), "shop"], [L10n.t("SKINS"), "skins"]]:
 		var b := _btn(item[0], "ghost", 60, 18)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var target: String = item[1]
@@ -227,10 +229,10 @@ func _stat_grid() -> GridContainer:
 	g.columns = 2
 	g.add_theme_constant_override("h_separation", 10)
 	g.add_theme_constant_override("v_separation", 10)
-	g.add_child(_stat_card("STARS", "%d" % Profile.total_stars()))
-	g.add_child(_stat_card("LEVEL", "%d" % Profile.unlocked))
-	g.add_child(_stat_card("SKINS", "%d / %d" % [Profile.owned_skins.size(), Profile.SKINS.size()]))
-	g.add_child(_stat_card("DAILY BEST", UIKit.short_num(Profile.daily_best)))
+	g.add_child(_stat_card(L10n.t("STARS"), "%d" % Profile.total_stars()))
+	g.add_child(_stat_card(L10n.t("LEVEL"), "%d" % Profile.unlocked))
+	g.add_child(_stat_card(L10n.t("SKINS"), "%d / %d" % [Profile.owned_skins.size(), Profile.SKINS.size()]))
+	g.add_child(_stat_card(L10n.t("DAILY BEST"), UIKit.short_num(Profile.daily_best)))
 	return g
 
 
@@ -245,8 +247,8 @@ func _howto_card() -> Panel:
 	hv.offset_bottom = -12
 	hv.add_theme_constant_override("separation", 4)
 	p.add_child(hv)
-	hv.add_child(UIKit.label("HOW TO PLAY", 10, UIKit.C_ACCENT, 800, false))
-	for line in ["TAP LEFT / RIGHT TO PICK A GATE", "COLOUR MEANS NOTHING - READ THE NUMBER", "FIRE BURNS 30% OF YOUR MASS"]:
+	hv.add_child(UIKit.label(L10n.t("HOW TO PLAY"), 10, UIKit.C_ACCENT, 800, false))
+	for line in [L10n.t("TAP LEFT / RIGHT TO PICK A GATE"), L10n.t("COLOUR MEANS NOTHING - READ THE NUMBER"), L10n.t("FIRE BURNS 30% OF YOUR MASS")]:
 		hv.add_child(UIKit.label(line, 12, UIKit.C_MUTED, 700, false))
 	return p
 
@@ -271,11 +273,11 @@ func _mission_card() -> Panel:
 	var head := HBoxContainer.new()
 	head.add_theme_constant_override("separation", 8)
 	left.add_child(head)
-	var cap := UIKit.label("DAILY MISSION", 12, UIKit.C_ACCENT, 700, false)
+	var cap := UIKit.label(L10n.t("DAILY MISSION"), 12, UIKit.C_ACCENT, 700, false)
 	head.add_child(cap)
 	var prog := UIKit.label("%d/%d" % [int(Profile.mission.get("progress", 0)), int(Profile.mission.get("target", 1))], 12, UIKit.C_DIM, 700, false)
 	head.add_child(prog)
-	var txt := UIKit.label(Profile.mission_text(), 19, UIKit.C_TEXT, 700, false)
+	var txt := UIKit.label(L10n.t(Profile.mission_template()).replace("{n}", str(int(Profile.mission.get("target", 0)))), 19, UIKit.C_TEXT, 700, false)
 	txt.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	left.add_child(txt)
 	var bar := GoalBar.new()
@@ -300,7 +302,7 @@ func _mission_card() -> Panel:
 	ph.add_child(reward)
 
 	if Profile.mission_done() and not bool(Profile.mission.get("claimed", false)):
-		var claim := _btn("CLAIM", "gold", 46, 15)
+		var claim := _btn(L10n.t("CLAIM"), "gold", 46, 15)
 		claim.custom_minimum_size = Vector2(88, 46)
 		claim.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		claim.pressed.connect(func() -> void:
@@ -310,7 +312,7 @@ func _mission_card() -> Panel:
 		)
 		h.add_child(claim)
 	elif bool(Profile.mission.get("claimed", false)):
-		var done := UIKit.label("DONE", 14, UIKit.C_LIME, 700, false)
+		var done := UIKit.label(L10n.t("DONE"), 14, UIKit.C_LIME, 700, false)
 		done.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		h.add_child(done)
 	return p
@@ -319,15 +321,15 @@ func _mission_card() -> Panel:
 # ---------------------------------------------------------------- levels
 func _build_levels() -> void:
 	var v := _screen_root()
-	v.add_child(_top_bar("LEVELS"))
-	var sub := UIKit.label("ENDLESS  ·  EVERY LEVEL IS GENERATED", 11, UIKit.C_DIM, 700, false)
+	v.add_child(_top_bar(L10n.t("LEVELS")))
+	var sub := UIKit.label(L10n.t("ENDLESS  ·  EVERY LEVEL IS GENERATED"), 11, UIKit.C_DIM, 700, false)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(sub)
 
 	var stats := HBoxContainer.new()
 	stats.add_theme_constant_override("separation", 10)
-	stats.add_child(UIKit.chip("STARS %d" % Profile.total_stars(), UIKit.C_GOLD))
-	stats.add_child(UIKit.chip("OPEN %d" % Profile.unlocked, UIKit.C_ACCENT))
+	stats.add_child(UIKit.chip(("ستاره %d" if Profile.is_fa() else "STARS %d") % Profile.total_stars(), UIKit.C_GOLD))
+	stats.add_child(UIKit.chip(("باز %d" if Profile.is_fa() else "OPEN %d") % Profile.unlocked, UIKit.C_ACCENT))
 	v.add_child(stats)
 
 	var scroll := ScrollContainer.new()
@@ -369,7 +371,7 @@ func _level_tile(n: int) -> Control:
 	inner.add_child(num)
 
 	if locked:
-		var l := UIKit.label("LOCKED", 9, UIKit.C_DIM, 700, false)
+		var l := UIKit.label(L10n.t("LOCKED"), 9, UIKit.C_DIM, 700, false)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		inner.add_child(l)
 	else:
@@ -382,7 +384,7 @@ func _level_tile(n: int) -> Control:
 		inner.add_child(s)
 
 	if n % 10 == 0 and not locked:
-		var badge := UIKit.label("BOSS", 9, UIKit.C_PINK, 700, false)
+		var badge := UIKit.label(L10n.t("BOSS"), 9, UIKit.C_PINK, 700, false)
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		inner.add_child(badge)
 
@@ -405,7 +407,7 @@ func _level_tile(n: int) -> Control:
 # ---------------------------------------------------------------- shop
 func _build_shop() -> void:
 	var v := _screen_root()
-	v.add_child(_top_bar("UPGRADES"))
+	v.add_child(_top_bar(L10n.t("UPGRADES")))
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -460,8 +462,8 @@ func _upgrade_card(key: String) -> Control:
 	mid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mid.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(mid)
-	mid.add_child(UIKit.label(info["name"], 21, UIKit.C_TEXT, 600))
-	mid.add_child(UIKit.label(info["desc"], 13, UIKit.C_MUTED, 700, false))
+	mid.add_child(UIKit.label(L10n.t(String(info["name"])), 21, UIKit.C_TEXT, 600))
+	mid.add_child(UIKit.label(L10n.t(String(info["desc"])), 13, UIKit.C_MUTED, 700, false))
 
 	var pips := HBoxContainer.new()
 	pips.add_theme_constant_override("separation", 4)
@@ -476,17 +478,17 @@ func _upgrade_card(key: String) -> Control:
 		var on := i < lvl
 		d.add_theme_stylebox_override("panel", UIKit.panel_style(3, ic if on else Color(1, 1, 1, 0.13), Color(0, 0, 0, 0), 0, 0))
 		pips.add_child(d)
-	var lv_label := UIKit.label("LV %d/%d" % [lvl, int(info["max"])], 11, UIKit.C_DIM, 700, false)
+	var lv_label := UIKit.label(("%d/%d" if Profile.is_fa() else "LV %d/%d") % [lvl, int(info["max"])], 11, UIKit.C_DIM, 700, false)
 	pip_row.add_child(lv_label)
 
 	if maxed:
-		var tag := UIKit.label("MAX", 18, UIKit.C_LIME, 700, false)
+		var tag := UIKit.label(L10n.t("MAX"), 18, UIKit.C_LIME, 700, false)
 		tag.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		h.add_child(tag)
 	else:
 		var cost := Profile.up_cost(key)
 		var afford := Profile.coins >= cost
-		var b := _btn("BUY  %d" % cost, "primary" if afford else "ghost", 48, 16)
+		var b := _btn((L10n.t("BUY") + "  %d") % cost, "primary" if afford else "ghost", 48, 16)
 		b.custom_minimum_size = Vector2(118, 48)
 		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		b.disabled = not afford
@@ -505,7 +507,7 @@ func _upgrade_card(key: String) -> Control:
 # ---------------------------------------------------------------- skins
 func _build_skins() -> void:
 	var v := _screen_root()
-	v.add_child(_top_bar("SKINS"))
+	v.add_child(_top_bar(L10n.t("SKINS")))
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 12)
@@ -537,16 +539,16 @@ func _skin_card(i: int) -> Control:
 	swatch.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	swatch.add_theme_stylebox_override("panel", UIKit.panel_style(26, sd["base"], Color(sd["rim"]), 3, 10))
 	v.add_child(swatch)
-	var name_l := UIKit.label(sd["name"], 19, UIKit.C_TEXT, 600)
+	var name_l := UIKit.label(L10n.t(String(sd["name"])), 19, UIKit.C_TEXT, 600)
 	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(name_l)
 
 	if selected:
-		var on := UIKit.label("EQUIPPED", 12, UIKit.C_LIME, 700, false)
+		var on := UIKit.label(L10n.t("EQUIPPED"), 12, UIKit.C_LIME, 700, false)
 		on.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(on)
 	elif owned:
-		var b := _btn("USE", "ghost", 38, 14)
+		var b := _btn(L10n.t("USE"), "ghost", 38, 14)
 		b.pressed.connect(func() -> void:
 			Profile.select_skin(i)
 			_refresh()
@@ -555,7 +557,7 @@ func _skin_card(i: int) -> Control:
 	else:
 		var price := int(sd["price"])
 		var afford := Profile.coins >= price
-		var b := _btn("BUY  %d" % price, "primary" if afford else "ghost", 38, 14)
+		var b := _btn((L10n.t("BUY") + "  %d") % price, "primary" if afford else "ghost", 38, 14)
 		b.disabled = not afford
 		b.modulate.a = 1.0 if afford else 0.55
 		b.pressed.connect(func() -> void:
@@ -594,20 +596,30 @@ func _open_settings() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 12)
 	m.add_child(v)
-	v.add_child(UIKit.title("SETTINGS", 26, UIKit.C_TEXT, 600))
-	v.add_child(_toggle_row("Music", Profile.music_on, func() -> void:
+	v.add_child(UIKit.title(L10n.t("SETTINGS"), 26, UIKit.C_TEXT, 600))
+	v.add_child(_toggle_row(L10n.t("Music"), Profile.music_on, func() -> void:
 		Profile.toggle_music()
 		sfx_requested.emit("music_toggle")
 		_refresh_settings(dim)
 	))
-	v.add_child(_toggle_row("Sound FX", Profile.sfx_on, func() -> void:
+	v.add_child(_toggle_row(L10n.t("Sound FX"), Profile.sfx_on, func() -> void:
 		Profile.toggle_sfx()
 		_refresh_settings(dim)
 	))
-	v.add_child(_toggle_row("Haptics", Profile.haptics_on, func() -> void:
+	v.add_child(_toggle_row(L10n.t("Haptics"), Profile.haptics_on, func() -> void:
 		Profile.toggle_haptics()
 	))
-	var close := _btn("CLOSE", "primary", 54, 19)
+	var lang_btn := _btn(("زبان  ·  English" if Profile.is_fa() else "LANGUAGE  ·  فارسی"), "ghost", 54, 17)
+	lang_btn.pressed.connect(func() -> void:
+		_click()
+		Profile.set_lang("en" if Profile.is_fa() else "fa")
+		UIKit.clear_font_cache()
+		_settings_open = false
+		dim.queue_free()
+		show_screen("menu")
+	)
+	v.add_child(lang_btn)
+	var close := _btn(L10n.t("CLOSE"), "primary", 54, 19)
 	close.pressed.connect(func() -> void:
 		_settings_open = false
 		dim.queue_free()

@@ -1,4 +1,6 @@
 extends Node3D
+
+const L10n = preload("res://scripts/l10n.gd")
 ## BLOB — hyper-casual 3D mass runner. World, UI and audio are all built in code.
 
 const TRACK_WIDTH := 8.0
@@ -572,7 +574,7 @@ func _build_hud() -> void:
 	bv.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bv.add_theme_constant_override("separation", 1)
 	block.add_child(bv)
-	var cap := UIKit.label("MASS", 13, UIKit.C_ACCENT, 800, false)
+	var cap := UIKit.label(L10n.t("MASS"), 13, UIKit.C_ACCENT, 800, false)
 	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	bv.add_child(cap)
 	lbl_mass = UIKit.title("20", 66, UIKit.C_TEXT, 700, 12, Color(0.02, 0.04, 0.10, 0.92))
@@ -624,7 +626,7 @@ func _build_hud() -> void:
 	boss_bar.bg_color = Color(0.35, 0.05, 0.12, 0.55)
 	bb.add_child(boss_bar)
 
-	lbl_hint = UIKit.label("TAP LEFT / RIGHT TO SWITCH LANES", 13, Color(1, 1, 1, 0.78), 700, false)
+	lbl_hint = UIKit.label("چپ یا راست بزن" if Profile.is_fa() else "TAP LEFT / RIGHT TO SWITCH LANES", 13, Color(1, 1, 1, 0.78), 700, false)
 	lbl_hint.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	lbl_hint.offset_left = -320
 	lbl_hint.offset_right = 320
@@ -740,6 +742,9 @@ func _handle_args() -> void:
 			shot_delay = float(a.split("=")[1])
 		elif a.begins_with("--screen="):
 			screen_arg = a.split("=")[1]
+		elif a.begins_with("--lang="):
+			Profile.set_lang(a.split("=")[1])
+			UIKit.clear_font_cache()
 		elif a.begins_with("--level="):
 			level = int(a.split("=")[1])
 
@@ -1747,7 +1752,7 @@ func _check_finish() -> void:
 	if z <= -level_len + 1.0:
 		var need := boss_mass if boss_active else goal
 		if mass < need and not invincible:
-			_die("You needed %d mass to fill the pool" % int(need))
+			_die(("برای پر کردن استخر %d جرم لازم بود" if Profile.is_fa() else "You needed %d mass to fill the pool") % int(need))
 		else:
 			won_boss = boss_active
 			_win()
@@ -1905,10 +1910,10 @@ func _show_win(stars: int, earned: int) -> void:
 	_tutorial_clear()
 	hud.visible = false
 	var v := _panel_shell()
-	var cap := UIKit.label("LEVEL %d CLEAR" % level, 13, UIKit.C_ACCENT, 700, false)
+	var cap := UIKit.label(("مرحله %d تمام شد" if Profile.is_fa() else "LEVEL %d CLEAR") % level, 13, UIKit.C_ACCENT, 700, false)
 	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(cap)
-	var title := UIKit.title("NICE!", 54, UIKit.C_TEXT, 700, 12, Color(0.03, 0.05, 0.12, 0.8))
+	var title := UIKit.title(L10n.t("NICE!"), 54, UIKit.C_TEXT, 700, 12, Color(0.03, 0.05, 0.12, 0.8))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(title)
 
@@ -1931,9 +1936,9 @@ func _show_win(stars: int, earned: int) -> void:
 	var stats := HBoxContainer.new()
 	stats.add_theme_constant_override("separation", 10)
 	v.add_child(stats)
-	stats.add_child(_stat_box("MASS", str(int(mass))))
-	stats.add_child(_stat_box("GOAL", str(int(goal))))
-	stats.add_child(_stat_box("STARS", "%d/3" % stars))
+	stats.add_child(_stat_box(L10n.t("MASS"), str(int(mass))))
+	stats.add_child(_stat_box(L10n.t("GOAL"), str(int(goal))))
+	stats.add_child(_stat_box(L10n.t("STARS"), "%d/3" % stars))
 
 	var coin_row := HBoxContainer.new()
 	coin_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -1944,7 +1949,7 @@ func _show_win(stars: int, earned: int) -> void:
 	coin_row.add_child(cl)
 
 	v.add_child(UIKit.hsep(6))
-	var next := UIKit.button("NEXT LEVEL", "primary", 62, 23)
+	var next := UIKit.button(L10n.t("NEXT LEVEL"), "primary", 62, 23)
 	next.pressed.connect(func() -> void:
 		_play("click")
 		_start_run(level + 1)
@@ -1953,14 +1958,14 @@ func _show_win(stars: int, earned: int) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	v.add_child(row)
-	var replay := UIKit.button("REPLAY", "ghost", 52, 17)
+	var replay := UIKit.button("دوباره" if Profile.is_fa() else "REPLAY", "ghost", 52, 17)
 	replay.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	replay.pressed.connect(func() -> void:
 		_play("click")
 		_start_run(level)
 	)
 	row.add_child(replay)
-	var home := UIKit.button("HOME", "ghost", 52, 17)
+	var home := UIKit.button(L10n.t("HOME"), "ghost", 52, 17)
 	home.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	home.pressed.connect(func() -> void:
 		_play("click")
@@ -2040,13 +2045,13 @@ func _show_lose(reason: String) -> void:
 	_tutorial_clear()
 	hud.visible = false
 	var v := _panel_shell()
-	var cap := UIKit.label("RUN OVER", 13, UIKit.C_DANGER, 700, false)
+	var cap := UIKit.label(L10n.t("RUN OVER"), 13, UIKit.C_DANGER, 700, false)
 	cap.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(cap)
-	var title := UIKit.title("TOO SMALL", 46, UIKit.C_TEXT, 700, 12, Color(0.03, 0.05, 0.12, 0.8))
+	var title := UIKit.title(L10n.t("TOO SMALL"), 46, UIKit.C_TEXT, 700, 12, Color(0.03, 0.05, 0.12, 0.8))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(title)
-	var sub := UIKit.label(reason, 16, UIKit.C_MUTED, 700, false)
+	var sub := UIKit.label(L10n.t(reason), 16, UIKit.C_MUTED, 700, false)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(sub)
@@ -2057,17 +2062,17 @@ func _show_lose(reason: String) -> void:
 	bar.fill_a = UIKit.C_PINK
 	bar.value = mass / maxf(goal, 1.0)
 	v.add_child(bar)
-	var gl := UIKit.label("%d / %d MASS" % [int(mass), int(goal)], 14, UIKit.C_MUTED, 700, false)
+	var gl := UIKit.label(("جرم %d / %d" if Profile.is_fa() else "%d / %d MASS") % [int(mass), int(goal)], 14, UIKit.C_MUTED, 700, false)
 	gl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(gl)
 	v.add_child(UIKit.hsep(8))
-	var retry := UIKit.button("RETRY", "primary", 64, 24)
+	var retry := UIKit.button(L10n.t("RETRY"), "primary", 64, 24)
 	retry.pressed.connect(func() -> void:
 		_play("click")
 		_start_run(level)
 	)
 	v.add_child(retry)
-	var home := UIKit.button("HOME", "ghost", 52, 17)
+	var home := UIKit.button(L10n.t("HOME"), "ghost", 52, 17)
 	home.pressed.connect(func() -> void:
 		_play("click")
 		_show_menu()
@@ -2107,26 +2112,26 @@ func _toggle_pause() -> void:
 func _show_pause() -> void:
 	hud.visible = false
 	var v := _panel_shell()
-	var t := UIKit.title("PAUSED", 44, UIKit.C_TEXT, 600)
+	var t := UIKit.title(L10n.t("PAUSED"), 44, UIKit.C_TEXT, 600)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(t)
 	var s := UIKit.label("LEVEL %d  ·  %d MASS" % [level, int(mass)], 15, UIKit.C_MUTED, 700, false)
 	s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(s)
 	v.add_child(UIKit.hsep(10))
-	var resume := UIKit.button("RESUME", "primary", 60, 22)
+	var resume := UIKit.button(L10n.t("RESUME"), "primary", 60, 22)
 	resume.pressed.connect(func() -> void:
 		_play("click")
 		_toggle_pause()
 	)
 	v.add_child(resume)
-	var restart := UIKit.button("RESTART", "ghost", 50, 17)
+	var restart := UIKit.button(L10n.t("RESTART"), "ghost", 50, 17)
 	restart.pressed.connect(func() -> void:
 		_play("click")
 		_start_run(level)
 	)
 	v.add_child(restart)
-	var home := UIKit.button("HOME", "ghost", 50, 17)
+	var home := UIKit.button(L10n.t("HOME"), "ghost", 50, 17)
 	home.pressed.connect(func() -> void:
 		_play("click")
 		_show_menu()
@@ -2199,10 +2204,13 @@ func _near_miss() -> void:
 
 # =============================================================== hud
 func _update_hud() -> void:
-	lbl_level.text = "DAILY RUN" if daily_mode else "LEVEL %d" % level
+	if daily_mode:
+		lbl_level.text = "ران روزانه" if Profile.is_fa() else "DAILY RUN"
+	else:
+		lbl_level.text = ("مرحله %d" if Profile.is_fa() else "LEVEL %d") % level
 	lbl_mass.text = str(int(mass))
 	lbl_coins.text = UIKit.short_num(Profile.coins + coins_run)
-	lbl_goal.text = "GOAL %d" % int(goal)
+	lbl_goal.text = ("هدف %d" if Profile.is_fa() else "GOAL %d") % int(goal)
 	goal_bar.value = mass / maxf(goal, 1.0)
 	goal_bar.fill_b = UIKit.C_LIME if mass >= goal else UIKit.C_ACCENT
 	for c in shield_row.get_children():

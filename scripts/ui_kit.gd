@@ -39,11 +39,27 @@ static func _font(path: String, weight: int) -> Font:
 	return fv
 
 
+static func _fa() -> bool:
+	var p := Engine.get_main_loop()
+	if p == null:
+		return false
+	var prof: Node = p.root.get_node_or_null("Profile")
+	return prof != null and String(prof.get("lang")) == "fa"
+
+
+static func clear_font_cache() -> void:
+	_fonts.clear()
+
+
 static func display(weight := 600) -> Font:
+	if _fa():
+		return _font("res://assets/fonts/Vazirmatn-Bold.ttf", 700)
 	return _font("res://assets/fonts/Fredoka.ttf", weight)
 
 
 static func body(weight := 700) -> Font:
+	if _fa():
+		return _font("res://assets/fonts/Vazirmatn-Bold.ttf", 700)
 	return _font("res://assets/fonts/Nunito.ttf", weight)
 
 

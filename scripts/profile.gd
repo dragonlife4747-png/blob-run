@@ -1,4 +1,6 @@
 extends Node
+
+const L10n = preload("res://scripts/l10n.gd")
 ## Persistent player profile: coins, stars, upgrades, skins, daily mission, settings.
 
 const SAVE_PATH := "user://profile.json"
@@ -43,6 +45,7 @@ var coins := 0
 var best_mass := 0
 var unlocked := 1
 var tutorial_done := false
+var lang := "en"
 var daily_best := 0
 var daily_date := ""
 var stars := {}
@@ -79,6 +82,8 @@ func load_profile() -> void:
 	best_mass = int(d.get("best_mass", 0))
 	unlocked = maxi(1, int(d.get("unlocked", 1)))
 	tutorial_done = bool(d.get("tutorial_done", false))
+	lang = String(d.get("lang", "en"))
+	L10n.fa = (lang == "fa")
 	daily_best = int(d.get("daily_best", 0))
 	daily_date = String(d.get("daily_date", ""))
 	if daily_date != Time.get_date_string_from_system():
@@ -110,6 +115,7 @@ func save_profile() -> void:
 		"best_mass": best_mass,
 		"unlocked": unlocked,
 		"tutorial_done": tutorial_done,
+		"lang": lang,
 		"daily_best": daily_best,
 		"daily_date": daily_date,
 		"stars": stars,
@@ -234,6 +240,25 @@ func _roll_mission() -> void:
 		"id": pick["id"], "target": pick["target"], "reward": pick["reward"],
 		"progress": 0, "claimed": false, "date": Time.get_date_string_from_system(),
 	}
+
+
+func is_fa() -> bool:
+	return lang == "fa"
+
+
+func set_lang(code: String) -> void:
+	lang = code
+	L10n.fa = (lang == "fa")
+	save_profile()
+
+
+func mission_template() -> String:
+	if mission.is_empty():
+		return ""
+	for x in MISSIONS:
+		if x["id"] == mission.get("id", ""):
+			return String(x.get("text", ""))
+	return ""
 
 
 func mission_text() -> String:
